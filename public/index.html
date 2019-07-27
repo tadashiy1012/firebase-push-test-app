@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/6.3.3/firebase-app.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/6.3.3/firebase-database.js"></script>
+    <script defer src="/__/firebase/6.3.3/firebase-messaging.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+
+  </head>
+  <body>
+    <button id="btn2">select all</button>
+    <button id="btn3">request push select</button>
+    <button id="btn">request push all</button>
+    <br>
+    <select name="slct" id="slct" multiple style="width: 400px; height: 400px;">
+    </select>
+    <script>
+      const btn = document.getElementById('btn');
+      const btn2 = document.getElementById('btn2');
+      const btn3 = document.getElementById('btn3');
+      const slct = document.getElementById('slct');
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          let app = firebase.app();
+          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
+        } catch (e) {
+          console.error(e);
+        }
+        const url = 'https://us-central1-pushtestapp-51f6f.cloudfunctions.net/requestTokenList';
+        fetch(url, {mode: 'cors'}).then((resp) => {
+          return resp.json();
+        }).then((json) => {
+          slct.innerHTML = "";
+          json.forEach((e, idx) => {
+            const opt = document.createElement('option');
+            opt.selected = true;
+            opt.value = idx;
+            opt.innerHTML = e;
+            slct.appendChild(opt);
+          });
+        }).catch((err) => {
+          console.error(err);
+        })
+      });
+      btn.addEventListener('click', () => {
+        const url = 'https://us-central1-pushtestapp-51f6f.cloudfunctions.net/requestPush';
+        fetch(url, {mode: 'cors'}).then((resp) => {
+          return resp.text();
+        }).then((text) => {
+          console.log(text);
+          alert('ok');
+        }).catch((err) => {
+          console.error(err);
+        });
+      });
+      btn2.addEventListener('click', () => {
+        Array.from(slct.children).forEach(e => {
+          console.log(e);
+          e.selected = true;
+        });
+      });
+      btn3.addEventListener('click', () => {
+        const url = 'https://us-central1-pushtestapp-51f6f.cloudfunctions.net/requestListPush';
+        const data = {
+          tokens: [...Array.from(slct.children).filter(e => e.selected === true).map(e => e.innerHTML)]
+        };
+        console.log(data);
+        fetch(url, {
+          mode: 'cors', 
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then((resp) => {
+          return resp.text();
+        }).then((text) => {
+          console.log(text);
+          alert('ok');
+        }).catch((err) => {
+          console.error(err);
+        });
+      });
+    </script>
+  </body>
+</html>

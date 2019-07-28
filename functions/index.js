@@ -3,7 +3,11 @@ const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 const firestore = admin.firestore();
 
-const whitelist = ['http://192.168.0.1', 'https://pushtestapp-51f6f.web.app', 'https://pushtestapp-51f6f.firebaseapp.com'];
+const whitelist = [
+    'https://pushtestapp-51f6f.web.app', 
+    'https://pushtestapp-51f6f.firebaseapp.com',
+    'https://tadashiy1012.github.io'
+];
 const corsOpt = {
     origin: function (origin, callback) {
         if (whitelist.indexOf(origin) !== -1) {
@@ -49,30 +53,31 @@ exports.putUser = functions.https.onRequest((req, res) => {
 });
 
 exports.putToken = functions.https.onRequest((req, res) => {
-    const subject = req.query.token;
-    const ref = firestore.collection('tokens');
-    ref.get().then((ss) => {
-        let tokens = [];
-        ss.forEach((e) => { tokens.push(e.data()); });
-        const filterd = tokens.filter((e) => e.token === subject);
-        if (filterd.length !== 0) {
-            res.send('ok:exist');
-        } else {
-            ref.add({
-                token: subject
-            }).then((doc) => {
-                console.log(doc.id);
-                res.send('ok');
-            }).catch((err) => {
-                console.error(err);
-                res.status(500).send('ng');
-            });
-        }
-    }).catch((err) => {
-        console.error(err);
-        res.status(500).send('ng');
+    cors(req, res, () => {
+        const subject = req.query.token;
+        const ref = firestore.collection('tokens');
+        ref.get().then((ss) => {
+            let tokens = [];
+            ss.forEach((e) => { tokens.push(e.data()); });
+            const filterd = tokens.filter((e) => e.token === subject);
+            if (filterd.length !== 0) {
+                res.send('ok:exist');
+            } else {
+                ref.add({
+                    token: subject
+                }).then((doc) => {
+                    console.log(doc.id);
+                    res.send('ok');
+                }).catch((err) => {
+                    console.error(err);
+                    res.status(500).send('ng');
+                });
+            }
+        }).catch((err) => {
+            console.error(err);
+            res.status(500).send('ng');
+        });
     });
-    
 });
 
 exports.requestPush = functions.https.onRequest((req, res) => {
@@ -108,13 +113,14 @@ exports.requestPush = functions.https.onRequest((req, res) => {
 
 exports.requestListPush = functions.https.onRequest((req, res) => {
     cors(req, res, () => {
+        const text = req.body.text;
         const tokens = req.body.tokens;
         let tasks = [];
         [...new Set(tokens)].forEach((token) => {
             const message = {
                 notification: {
                     title: "test push",
-                    body: "hoge"
+                    body: text
                 },
                 token
             };
